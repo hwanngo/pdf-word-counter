@@ -1,10 +1,19 @@
+import javax.swing.SwingUtilities;
+
 public class WordCount {
-    public static void main(String[] args) {
+    static Runnable createStartupAction(Runnable bootstrap) {
+        return bootstrap;
+    }
+
+    static void launch() {
         Model model = new Model();
         View view = new View();
-        Controller controller = new Controller(view, model);
+        new Controller(view, model);
         view.setVisible(true);
     }
 
-}
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(createStartupAction(WordCount::launch));
+    }
 
+}

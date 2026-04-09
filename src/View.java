@@ -201,6 +201,14 @@ class View extends JFrame {
         this.filePathField.setText(filePath);
     }
 
+    void setBusy(boolean busy) {
+        btnChooseFile.setEnabled(!busy);
+        btnCountWord.setEnabled(!busy);
+        btnPdfStopWords.setEnabled(!busy);
+        btnTokenizedText.setEnabled(!busy);
+        mnhAbout.setEnabled(!busy);
+    }
+
     void addActionListener(ActionListener btnChooseAL, ActionListener btnCountAL, ActionListener btnAbout, ActionListener btnTokenizedTextAL, ActionListener btnPdfStopWordsAL){
         btnChooseFile.addActionListener(btnChooseAL);
         btnCountWord.addActionListener(btnCountAL);

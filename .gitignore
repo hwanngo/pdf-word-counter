@@ -1,9 +1,33 @@
-.idea
+# IDE and editor metadata
+.idea/
+
+# AI coding assistants and agent state
+.serena/
+.opencode/
+.claude/
+.cursor/
+.aider*
+.continue/
+.augment/
+.roo/
+.windsurf/
+.openhands/
+docs/superpowers/
+
+# macOS and local workstation noise
+.DS_Store
+
+# Build output
 out/
-resources/
+
+# Runtime-generated files
 results/
 tokenizer.log
 tokenizer.log.lck
 
+# Local runtime assets
+resources/
+
+# Keep placeholder files if directories are intentionally created
 !resources/.gitkeep
 !results/.gitkeep

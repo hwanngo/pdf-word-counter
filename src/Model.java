@@ -18,14 +18,27 @@ class Model {
     private String originalText;
     private String tokenizedText;
     private HashSet<String> pdfStopWords = new HashSet<>();
-    private String resourcePath = "resources/";
-    private String resultPath = "results/";
-    private String stopWordsFile = resourcePath + "StopWords.txt";
+    private final String resourcePath;
+    private final String resultPath;
+    private final String stopWordsFile;
     private HashSet<String> stopWords = new HashSet<>();
-    private String originalTextFile = resultPath + "1.OriginalText.txt";
-    private String tokenizedTextFile = resultPath + "2.TokenizedText.txt";
-    private String cleanedTextFile = resultPath + "3.CleanedText.txt";
+    private final String originalTextFile;
+    private final String tokenizedTextFile;
+    private final String cleanedTextFile;
     private int result = 0;
+
+    Model() {
+        this("resources/", "results/");
+    }
+
+    Model(String resourcePath, String resultPath) {
+        this.resourcePath = resourcePath;
+        this.resultPath = resultPath;
+        this.stopWordsFile = new File(resourcePath, "StopWords.txt").getPath();
+        this.originalTextFile = new File(resultPath, "1.OriginalText.txt").getPath();
+        this.tokenizedTextFile = new File(resultPath, "2.TokenizedText.txt").getPath();
+        this.cleanedTextFile = new File(resultPath, "3.CleanedText.txt").getPath();
+    }
 
     private String getFileExtension(String filePath) {
         String extension="";
@@ -45,77 +58,69 @@ class Model {
         return extension.equals("pdf");
     }
 
-    private String loadPdf(File file) throws IOException {
-        String filepath = file.getAbsolutePath();
-        boolean isPdf = isPdf(filepath);
-
-        PDDocument document;
-
-        if (file.exists() && isPdf) {
-            document = PDDocument.load(file);
-        } else {
-            document = null;
-            System.exit(0);
+    void validateSelectedFile(File file) throws IOException {
+        if (file == null) {
+            throw new IOException("No PDF file selected");
         }
-
-        PDFTextStripper pdfStripper = new PDFTextStripper();
-        String documentText = pdfStripper.getText(document);
-        document.close();
-
-        return documentText;
+        if (!file.exists()) {
+            throw new IOException("Selected PDF does not exist: " + file.getAbsolutePath());
+        }
+        if (!isPdf(file.getAbsolutePath().toLowerCase())) {
+            throw new IOException("Selected file is not a PDF: " + file.getName());
+        }
     }
 
-    private HashSet<String> loadStopWords() {
-        BufferedReader bufferedReader = null;
+    void ensureRuntimePaths() throws IOException {
+        File resourcesDir = new File(resourcePath);
+        File resultsDir = new File(resultPath);
+        File stopWords = new File(stopWordsFile);
 
-        try {
+        if (!resourcesDir.isDirectory()) {
+            throw new IOException("Missing resources directory: " + resourcesDir.getAbsolutePath());
+        }
+        if (!stopWords.isFile()) {
+            throw new IOException("Missing stop words file: " + stopWords.getAbsolutePath());
+        }
+        if (!resultsDir.exists() && !resultsDir.mkdirs()) {
+            throw new IOException("Unable to create results directory: " + resultsDir.getAbsolutePath());
+        }
+    }
+
+    private String loadPdf(File file) throws IOException {
+        validateSelectedFile(file);
+        try (PDDocument document = PDDocument.load(file)) {
+            PDFTextStripper pdfStripper = new PDFTextStripper();
+            return pdfStripper.getText(document);
+        }
+    }
+
+    private HashSet<String> loadStopWords() throws IOException {
+        stopWords.clear();
+        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(stopWordsFile))) {
             String strCurrentLine;
-            bufferedReader = new BufferedReader(new FileReader(stopWordsFile));
             while ((strCurrentLine = bufferedReader.readLine()) != null) {
                 stopWords.add(strCurrentLine);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                if (bufferedReader != null)
-                    bufferedReader.close();
-            } catch (IOException ex) {
-                ex.printStackTrace();
             }
         }
 
         return stopWords;
     }
 
-    private void writeToFile(String filename, String text) {
-        try {
-            BufferedWriter writer = new BufferedWriter(new FileWriter(filename));
-            writer.write (text);
-            writer.close();
-        } catch(Exception e) {
-            e.printStackTrace();
+    private void writeToFile(String filename, String text) throws IOException {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename))) {
+            writer.write(text);
         }
     }
 
-    private String loadTxt() {
+    String loadTxt() throws IOException {
         StringBuilder text = new StringBuilder();
-        BufferedReader bufferedReader = null;
-
-        try {
+        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(tokenizedTextFile))) {
             String currentLine;
-            bufferedReader = new BufferedReader(new FileReader(tokenizedTextFile));
             while ((currentLine = bufferedReader.readLine()) != null) {
+                if (text.length() > 0) {
+                    text.append(' ');
+                }
                 text.append(currentLine);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                if (bufferedReader != null)
-                    bufferedReader.close();
-            } catch (IOException ex) {
-                ex.printStackTrace();
             }
         }
 
@@ -123,8 +128,13 @@ class Model {
     }
 
     private static ArrayList<String> convertTextToWordList(String string) {
-        String[] wordArray = string.split(" ");
         ArrayList<String> wordList = new ArrayList<>();
+
+        if (string == null || string.trim().isEmpty()) {
+            return wordList;
+        }
+
+        String[] wordArray = string.trim().split("\\s+");
 
         Collections.addAll(wordList, wordArray);
 
@@ -150,8 +160,16 @@ class Model {
         return string.replaceAll("\\r\\n", " ").replaceAll("[0-9$&+,:;=?@#|'<>.^*()%!-/\\\\{}\\[\\]`~’]", " ").replaceAll("\\s\\s+", " ").toLowerCase();
     }
 
+    void clearProcessingState() {
+        originalText = "";
+        tokenizedText = "";
+        pdfStopWords.clear();
+        result = 0;
+    }
+
 
     void runCountWord(File file) throws IOException {
+        ensureRuntimePaths();
         originalText = loadPdf(file);
         writeToFile(originalTextFile, originalText);
 
@@ -159,11 +177,9 @@ class Model {
         tokenizer.tokenize(originalTextFile, tokenizedTextFile);
 
         tokenizedText = loadTxt();
-        ArrayList<String> wordList = convertTextToWordList(tokenizedText);
-
-        String cleanedText = cleanString(tokenizedText);
+        String cleanedText = cleanString(tokenizedText).trim();
         writeToFile(cleanedTextFile, cleanedText);
-        wordList = convertTextToWordList(cleanedText);
+        ArrayList<String> wordList = convertTextToWordList(cleanedText);
 
         HashSet<String> stopWords = loadStopWords();
 

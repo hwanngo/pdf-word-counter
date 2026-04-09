@@ -40,10 +40,30 @@ Run with the existing output layout:
 java -cp "out/production/WordCountPDF:$(printf ':%s' libs/*.jar | cut -c2-)" WordCount
 ```
 
+Shortcut script:
+
+```bash
+./build.sh compile
+./build.sh run
+```
+
+Build a thin jar and run it:
+
+```bash
+./build.sh jar
+./build.sh jar-run
+```
+
 ### Run tests
 
 ```bash
 tmpdir=$(mktemp -d) && javac -cp "$(printf ':%s' libs/*.jar | cut -c2-)" -d "$tmpdir" src/*.java test/*.java && java -cp "$tmpdir:$(printf ':%s' libs/*.jar | cut -c2-)" org.junit.runner.JUnitCore ModelBehaviorTest ControllerWorkerSmokeTest
+```
+
+Or use:
+
+```bash
+./build.sh test
 ```
 
 ### Runtime notes
@@ -89,10 +109,30 @@ Chạy ứng dụng theo layout output hiện tại:
 java -cp "out/production/WordCountPDF:$(printf ':%s' libs/*.jar | cut -c2-)" WordCount
 ```
 
+Script rút gọn:
+
+```bash
+./build.sh compile
+./build.sh run
+```
+
+Build jar mỏng rồi chạy:
+
+```bash
+./build.sh jar
+./build.sh jar-run
+```
+
 ### Chạy test
 
 ```bash
 tmpdir=$(mktemp -d) && javac -cp "$(printf ':%s' libs/*.jar | cut -c2-)" -d "$tmpdir" src/*.java test/*.java && java -cp "$tmpdir:$(printf ':%s' libs/*.jar | cut -c2-)" org.junit.runner.JUnitCore ModelBehaviorTest ControllerWorkerSmokeTest
+```
+
+Hoặc dùng:
+
+```bash
+./build.sh test
 ```
 
 ### Ghi chú runtime
